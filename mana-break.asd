@@ -15,6 +15,7 @@
                 :components
                 ((:file "package")
                  (:file "components")
+                 (:file "ui")
                  (:file "atlas")
                  (:file "sprite")
                  (:file "map")

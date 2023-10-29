@@ -50,3 +50,7 @@
 
 (ecs:defcomponent image
   (bitmap (cffi:null-pointer) :type cffi:foreign-pointer))
+
+(ecs:defcomponent character
+  (nickname "" :type simple-string)
+  (speed 0.0 :type single-float))

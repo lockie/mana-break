@@ -29,6 +29,7 @@
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
+  (update-selection)
   (ecs:run-systems :dt (float dt 0.0))
   (nk:with-rects ((window-rect (:x 600 :y 0 :w 400 :h 30)))
     (nk:with-colors ((background (:r 0 :g 0 :b 0 :a 190))

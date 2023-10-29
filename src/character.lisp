@@ -1,9 +1,6 @@
 (in-package #:mana-break)
 
 
-(ecs:defcomponent character
-  (speed 0.0 :type single-float))
-
 (declaim (inline distance))
 (defun distance (x1 y1 x2 y2)
   (flet ((sqr (x) (* x x)))
@@ -137,8 +134,8 @@
   (y 0.0 :type pos)
   (traveller -1 :type ecs:entity :index path-points))
 
-(declaim (ftype (function (fixnum fixnum ecs:entity)) reconstruct-path))
-(defun reconstruct-path (start goal entity)
+(declaim (ftype (function (pos pos fixnum ecs:entity)) reconstruct-path))
+(defun reconstruct-path (start-x start-y goal entity)
   (let* ((size (length *came-from*))
          (length 0)
          (path (make-array size :element-type 'fixnum)))
@@ -154,7 +151,8 @@
                              (floor x +tile-size+))))
           :until (minusp c) :do
             (setf (aref path (incf length)) c))
-    (setf (aref path (incf length)) start)
+    (ecs:make-object
+     `((:path-point :x ,start-x :y ,start-y :traveller ,entity)))
     (loop :for i :from length :downto 0
           :do (multiple-value-bind (x y)
                   (marshal-tile (aref path i))
@@ -185,7 +183,7 @@
            (setf calculate-path-target-tile-x tile-x
                  calculate-path-target-tile-y tile-y)
            (assign-follows-path entity)
-           (reconstruct-path (tile-hash position-x position-y) goal entity)
+           (reconstruct-path position-x position-y goal entity)
            (complete-node t))
          (complete-node nil))))))
 
@@ -207,7 +205,8 @@
              (distance position-x position-y path-point-x path-point-y))
             (block point-reached
               (setf position-x path-point-x
-                    position-y path-point-y)
+                    position-y path-point-y
+                    position-tile (tile-hash position-x position-y))
               (ecs:delete-entity first-point)
               (if-let (next-point (second path-points))
                 (with-path-point (next-point-x next-point-y) next-point
@@ -241,7 +240,8 @@
        (distance position-x position-y movement-target-x movement-target-y))
       (block finished
         (setf position-x movement-target-x
-              position-y movement-target-y)
+              position-y movement-target-y
+              position-tile (tile-hash position-x position-y))
         (delete-movement entity)
         (complete-node t))
       (let* ((diff-x (- movement-target-x position-x))
@@ -262,7 +262,8 @@
               (delete-movement entity)
               (complete-node nil))
             (setf position-x new-x
-                  position-y new-y)))))
+                  position-y new-y
+                  position-tile (tile-hash position-x position-y))))))
 
 (define-behaviour-tree-node make-random-movement-target () nil
   (loop :for x :of-type single-float :=
@@ -556,3 +557,25 @@
        (generate-mana ())
        (dummy-false ())))
      (start-idling ())))
+
+(defun stop-activity (entity)
+  (when (has-follows-path-p entity)
+    (delete-follows-path entity))
+  (when (has-movement-p entity)
+    (delete-movement entity))
+  (when (has-target-p entity)
+    (delete-target entity))
+  (dolist (point (path-points entity))
+    (ecs:delete-entity point))
+  (cond ((has-idle-root-p entity)
+         (delete-idle-behaviour-tree entity))
+        ((has-collect-wood-root-p entity)
+         (delete-collect-wood-behaviour-tree entity))
+        ((has-collect-ore-root-p entity)
+         (delete-collect-ore-behaviour-tree entity))
+        ((has-build-workshop-root-p entity)
+         (delete-build-workshop-behaviour-tree entity))
+        ((has-build-temple-root-p entity)
+         (delete-build-temple-behaviour-tree entity))
+        ((has-pray-root-p entity)
+         (delete-pray-behaviour-tree entity))))
