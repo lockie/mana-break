@@ -6,11 +6,15 @@
                #:cl-fast-ecs
                #:cl-liballegro
                #:cl-liballegro-nuklear
+               #:let-plus
                #:livesupport)
   :serial t
   :components ((:module "src"
                 :components
                 ((:file "package")
+                 (:file "components")
+                 (:file "atlas")
+                 (:file "sprite")
                  (:file "main"))))
   :description "A simple game."
   :defsystem-depends-on (#:deploy)

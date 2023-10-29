@@ -13,7 +13,8 @@
   :test #'string=)
 
 (defun init ()
-  (ecs:bind-storage))
+  (ecs:bind-storage)
+  (load-atlas "dawnlike.atlas"))
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
