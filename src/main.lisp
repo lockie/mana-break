@@ -21,16 +21,43 @@
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
 
+(declaim (type cffi:foreign-pointer *font* *ui-font* *ui-context*))
+(defvar *font*)
+(defvar *ui-font*)
+(defvar *ui-context*)
+
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
-  (ecs:run-systems :dt (float dt 0.0)))
+  (ecs:run-systems :dt (float dt 0.0))
+  (nk:with-rects ((window-rect (:x 600 :y 0 :w 400 :h 30)))
+    (nk:with-colors ((background (:r 0 :g 0 :b 0 :a 190))
+                     (wood (:r 244 :g 164 :b 96))
+                     (ore (:r 192 :g 192 :b 192))
+                     (mana (:r 65 :g 105 :b 225)))
+      (nk:with-styles *ui-context*
+          ((:item nk:+style-window-fixed-background+
+                  (nk:style-item-color background)))
+        (nk:with-window *ui-context* "resources" window-rect
+            (:+window-no-scrollbar+ :+window-no-input+) nil
+          (nk:layout-row-static *ui-context* 28.0 128 3)
+          (nk:label-colored *ui-context*
+                            (format nil "wood ~a" (truncate *wood*))
+                            (nk:flags nk:text-alignment :+text-left+)
+                            wood)
+          (nk:label-colored *ui-context*
+                            (format nil "mana ~a" (truncate *mana*))
+                            (nk:flags nk:text-alignment :+text-centered+)
+                            mana)
+          (nk:label-colored *ui-context*
+                            (format nil "ore ~a" (truncate *ore*))
+                            (nk:flags nk:text-alignment :+text-right+)
+                            ore))))))
 
-(defvar *font*)
-
-(defun render ()
-  (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
-                (format nil "~d FPS" *fps*)))
+  (defun render ()
+    (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
+                  (format nil "~d FPS" *fps*))
+    (nk:allegro-render))
 
 (cffi:defcallback %main :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
@@ -85,15 +112,24 @@
                :with *font* := (al:ensure-loaded #'al:load-ttf-font
                                                  +font-path+
                                                  (- +font-size+) 0)
+               :with *ui-font* :=  (al:ensure-loaded
+                                    #'nk:allegro-font-create-from-file
+                                    +font-path+ (- +font-size+) 0)
+               :with *ui-context* :=
+                  (nk:allegro-init *ui-font* display
+                                   +window-width+ +window-height+)
                :with ticks :of-type double-float := (al:get-time)
                :with last-repl-update :of-type double-float := ticks
                :with dt :of-type double-float := 0d0
                :while (loop
                         :named event-loop
+                        :initially (nk:input-begin *ui-context*)
                         :while (al:get-next-event event-queue event)
                         :for type := (cffi:foreign-slot-value
                                       event '(:union al:event) 'al::type)
-                        :always (not (eq type :display-close)))
+                        :do (nk:allegro-handle-event event)
+                        :always (not (eq type :display-close))
+                        :finally (nk:input-end *ui-context*))
                :do (let ((new-ticks (al:get-time)))
                      (setf dt (- new-ticks ticks)
                            ticks new-ticks))
@@ -106,7 +142,10 @@
                      (update dt)
                      (render))
                    (al:flip-display)
-               :finally (al:destroy-font *font*)))
+               :finally
+                  (nk:allegro-shutdown)
+                  (nk:allegro-font-del *ui-font*)
+                  (al:destroy-font *font*)))
         (al:inhibit-screensaver nil)
         (al:destroy-event-queue event-queue)
         (al:destroy-display display)
