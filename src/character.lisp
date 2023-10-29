@@ -524,3 +524,35 @@
        (finish-building-temple ())
        (dummy-false ())))
      (start-idling ())))
+
+(define-behaviour-tree-node pick-temple () nil
+  (with-buildings-of-type +temple+ building
+    (assign-target entity :entity building)
+    (return-from ecs::current-entity (complete-node t)))
+  (complete-node nil))
+
+(define-behaviour-tree-node generate-mana
+    ((amount 2.0 :type single-float))
+    nil
+  (incf *mana* generate-mana-amount)
+  (complete-node t))
+
+(define-behaviour-tree pray
+    (sequence
+     (:name "root")
+     (repeat-until-fail
+      ()
+      (sequence
+       (:name "pray-sequence")
+       (pick-temple ())
+       (calculate-path (:name "calculate-path-to-temple"))
+       (repeat-until-fail
+        (:name "following-temple")
+        (sequence (:name "follow-temple-sequence")
+                  (follow-path (:name "keep-following-temple"))
+                  (move ())))
+       (flip-coin (:name "concentration" :probability 0.9))
+       (idle (:name "pray" :time 10.0))
+       (generate-mana ())
+       (dummy-false ())))
+     (start-idling ())))
