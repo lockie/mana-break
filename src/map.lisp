@@ -112,9 +112,7 @@
         ((typep layer 'tiled:object-layer)
          (dolist (object (tiled:object-group-objects layer))
            (let ((entity (ecs:make-object
-                          (with-input-from-string
-                              (s (gethash "object" (tiled:properties object)))
-                            (read s)))))
+                          (properties->spec (tiled:properties object)))))
              (make-position entity
                             :x (float (tiled:object-x object))
                             :y (float (tiled:object-y object))))))))

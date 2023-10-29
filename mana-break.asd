@@ -20,8 +20,8 @@
                  (:file "map")
                  (:file "behaviour-tree")
                  (:file "priority-queue")
-                 (:file "character")
                  (:file "game")
+                 (:file "character")
                  (:file "main"))))
   :description "A simple game."
   :defsystem-depends-on (#:deploy)

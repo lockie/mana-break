@@ -331,7 +331,7 @@
 
 (define-behaviour-tree-node store-wood () nil
   ;; TODO degrade efficiency related to the number of workshops?..
-  (format t "TODO adding tree resource~%")
+  (incf *wood* 5.0)
   (complete-node t))
 
 (define-behaviour-tree-node flip-coin
@@ -371,6 +371,18 @@
                 (flip-coin (:name "concentration" :probability 0.8))))
      (start-idling ())))
 
+(defconstant +workshop+ 0)
+(defconstant +temple+ 1)
+
+(ecs:defcomponent building
+  (assigned 0 :type bit :index assigned-buildings)
+  (type -1 :type fixnum :index buildings-of-type))
+
+(define-behaviour-tree-node check-workshop-present () nil
+  (with-buildings-of-type +workshop+ _
+    (return-from ecs::current-entity (complete-node t)))
+  (complete-node nil))
+
 (define-behaviour-tree-node pick-ore () nil
   (with-resource-of-type +ore+ resource
     (when (plusp (resource-free resource))
@@ -380,16 +392,16 @@
 
 (define-behaviour-tree-node store-ore () nil
   ;; TODO degrade efficiency related to the number of workshops?..
-  (format t "TODO adding ore resource~%")
+  (incf *ore* 5.0)
   (complete-node t))
 
 (define-behaviour-tree collect-ore
     (sequence
      (:name "root")
-     ;; TODO : check workshops are present
      (repeat-until-fail
       (:name "collecting-ore-loop")
       (sequence (:name "collect-ore-sequence")
+                (check-workshop-present ())
                 (pick-ore ())
                 (calculate-path (:name "calculate-path-to-ore"))
                 (repeat-until-fail
@@ -410,4 +422,105 @@
                 (idle (:name "unload" :time 1.0))
                 (store-ore ())
                 (flip-coin (:name "concentration" :probability 0.6))))
+     (start-idling ())))
+
+(define-behaviour-tree-node check-resources
+    ((wood 0.0 :type single-float)
+     (ore 0.0 :type single-float))
+    nil
+  (complete-node
+   (and (>= *wood* check-resources-wood)
+        (>= *ore* check-resources-ore))))
+
+(define-behaviour-tree-node pick-building () nil
+  (with-assigned-buildings 0 building
+    (assign-target entity :entity building)
+    (return-from ecs::current-entity (complete-node t)))
+  (complete-node nil))
+
+(defconstant +build-distance+ 32.0)
+
+(define-behaviour-tree-node start-building ()
+    (:components-ro (position target))
+  (with-position (target-x target-y) target-entity
+    (with-building () target-entity
+      (when (or (plusp assigned)
+                (< +build-distance+
+                   (distance position-x position-y target-x target-y)))
+        (return-from ecs::current-entity (complete-node nil)))
+      (setf assigned 1)
+      (complete-node t))))
+
+(define-behaviour-tree-node finish-building-workshop ()
+    (:components-ro (target))
+  (with-building () target-entity
+    (setf type +workshop+))
+  (with-position (target-x target-y) target-entity
+    (make-sprite-entity "smithy sign" target-x (- target-y +tile-size+)))
+  (complete-node t))
+
+(define-behaviour-tree-node spend-resources
+    ((wood 0.0 :type single-float)
+     (ore 0.0 :type single-float))
+    nil
+  (if (and (>= *wood* spend-resources-wood)
+           (>= *ore* spend-resources-ore))
+      (progn
+        (decf *wood* spend-resources-wood)
+        (decf *ore* spend-resources-ore)
+        (complete-node t))
+      (complete-node nil)))
+
+(define-behaviour-tree build-workshop
+    (sequence
+     (:name "root")
+     (repeat-until-fail
+      ()
+      (sequence
+       (:name "build-workshop-sequence")
+       (check-resources (:wood 100.0))
+       (pick-building ())
+       (calculate-path (:name "calculate-path-to-building"))
+       (repeat-until-fail
+        (:name "following-building")
+        (sequence (:name "follow-building-sequence")
+                  (follow-path (:name "keep-following-building"))
+                  (move ())))
+       (flip-coin (:name "concentration" :probability 0.9))
+       (spend-resources (:wood 100.0))
+       (start-building ())
+       (idle (:name "build" :time 10.0))
+       (finish-building-workshop ())
+       (dummy-false ())))
+     (start-idling ())))
+
+(define-behaviour-tree-node finish-building-temple ()
+    (:components-ro (target))
+  (with-building () target-entity
+    (setf type +temple+))
+  (with-position (target-x target-y) target-entity
+    (make-sprite-entity "church sign" target-x (- target-y +tile-size+)))
+  (complete-node t))
+
+(define-behaviour-tree build-temple
+    (sequence
+     (:name "root")
+     (repeat-until-fail
+      ()
+      (sequence
+       (:name "build-temple-sequence")
+       (check-resources (:wood 100.0 :ore 100.0))
+       (pick-building ())
+       (calculate-path (:name "calculate-path-to-building"))
+       (repeat-until-fail
+        (:name "following-building")
+        (sequence (:name "follow-building-sequence")
+                  (follow-path (:name "keep-following-building"))
+                  (move ())))
+       (flip-coin (:name "concentration" :probability 0.9))
+       (spend-resources (:wood 100.0 :ore 100.0))
+       (start-building ())
+       (idle (:name "build" :time 10.0))
+       (finish-building-temple ())
+       (dummy-false ())))
      (start-idling ())))

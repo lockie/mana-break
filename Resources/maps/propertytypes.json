@@ -1,5 +1,17 @@
 [
     {
+        "id": 5,
+        "members": [
+            {
+                "name": "assigned",
+                "type": "int",
+                "value": 0
+            }
+        ],
+        "name": "building",
+        "type": "class"
+    },
+    {
         "id": 1,
         "members": [
             {
