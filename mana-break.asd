@@ -18,6 +18,7 @@
                  (:file "atlas")
                  (:file "sprite")
                  (:file "map")
+                 (:file "behaviour-tree")
                  (:file "main"))))
   :description "A simple game."
   :defsystem-depends-on (#:deploy)
