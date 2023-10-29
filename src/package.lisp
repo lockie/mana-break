@@ -1,5 +1,7 @@
 (defpackage #:mana-break
   (:use #:cl #:let-plus)
-  (:import-from #:alexandria #:define-constant #:non-negative-fixnum
-                #:positive-fixnum #:switch)
+  (:local-nicknames (#:tiled #:cl-tiled))
+  (:import-from #:alexandria #:array-length #:define-constant
+                #:make-keyword #:non-negative-fixnum #:positive-fixnum #:switch)
+  (:import-from #:global-vars #:define-global-parameter)
   (:export #:main))

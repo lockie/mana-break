@@ -47,3 +47,6 @@
   "The object size in pixels."
   (width  0.0 :type pos)
   (height 0.0 :type pos))
+
+(ecs:defcomponent image
+  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer))

@@ -1,7 +1,7 @@
 (in-package #:mana-break)
 
-(define-constant +window-width+ 800)
-(define-constant +window-height+ 600)
+(define-constant +window-width+ 1600)
+(define-constant +window-height+ 900)
 
 (define-constant +repl-update-interval+ 0.3d0)
 
@@ -14,7 +14,8 @@
 
 (defun init ()
   (ecs:bind-storage)
-  (load-atlas "dawnlike.atlas"))
+  (load-atlas "dawnlike.atlas")
+  (load-map "map.tmx"))
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
@@ -27,12 +28,8 @@
 (defvar *font*)
 
 (defun render ()
-
   (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
-                (format nil "~d FPS" *fps*))
-
-  ;; TODO : put your drawing code here
-  )
+                (format nil "~d FPS" *fps*)))
 
 (cffi:defcallback %main :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))

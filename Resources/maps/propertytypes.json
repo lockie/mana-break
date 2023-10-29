@@ -1,0 +1,14 @@
+[
+    {
+        "id": 2,
+        "members": [
+            {
+                "name": "movement-cost",
+                "type": "int",
+                "value": 0
+            }
+        ],
+        "name": "map-tile",
+        "type": "class"
+    }
+]

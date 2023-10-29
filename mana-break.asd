@@ -6,6 +6,8 @@
                #:cl-fast-ecs
                #:cl-liballegro
                #:cl-liballegro-nuklear
+               #:cl-tiled
+               #:global-vars
                #:let-plus
                #:livesupport)
   :serial t
@@ -15,6 +17,7 @@
                  (:file "components")
                  (:file "atlas")
                  (:file "sprite")
+                 (:file "map")
                  (:file "main"))))
   :description "A simple game."
   :defsystem-depends-on (#:deploy)
