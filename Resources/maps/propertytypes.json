@@ -1,6 +1,6 @@
 [
     {
-        "id": 2,
+        "id": 1,
         "members": [
             {
                 "name": "movement-cost",
@@ -9,6 +9,30 @@
             }
         ],
         "name": "map-tile",
+        "type": "class"
+    },
+    {
+        "id": 2,
+        "members": [
+            {
+                "name": "type",
+                "type": "int",
+                "value": 0
+            }
+        ],
+        "name": "resource",
+        "type": "class"
+    },
+    {
+        "id": 3,
+        "members": [
+            {
+                "name": "storage",
+                "type": "int",
+                "value": 1
+            }
+        ],
+        "name": "storage",
         "type": "class"
     }
 ]

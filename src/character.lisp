@@ -81,7 +81,7 @@
     (when (< (length *came-from*) world-size)
       (setf *came-from* (ecs::adjust-array* *came-from* world-size
                                             :element-type 'fixnum)))
-    (fill *cost-so-far* float-features:single-float-nan) ;; XXX maybe just neg.?
+    (fill *cost-so-far* float-features:single-float-nan)
     (fill *came-from* -1)
     (queue-insert frontier (tile-hash start-x* start-y*) 0.0)
     (setf (cost-so-far start-x* start-y*) 0.0)
@@ -219,7 +219,7 @@
                   (complete-node nil))))
             (unless (has-movement-p entity)
               (delete-follows-path entity)
-              (with-path-points entity point
+              (dolist (point (path-points entity))
                 (ecs:delete-entity point)))))
       (complete-node nil))))
 
@@ -265,8 +265,10 @@
                   position-y new-y)))))
 
 (define-behaviour-tree-node make-random-movement-target () nil
-  (loop :for x :of-type single-float := (random (* +tile-size+ *world-width*))
-        :for y :of-type single-float := (random (* +tile-size+ *world-height*))
+  (loop :for x :of-type single-float :=
+           (random (* +tile-size+ *world-width*))
+        :for y :of-type single-float :=
+           (random (* +tile-size+ (1- *world-height*)))
         :while (obstaclep x y)
         :finally (with-tiles (tile-hash x y) tile
                    (when (has-map-tile-p tile)
@@ -274,14 +276,138 @@
                      (return-from ecs::current-entity (complete-node t))))))
 
 (define-behaviour-tree idle
-    (repeat (:name "repeater")
+    (repeat (:name "loop")
             (sequence (:name "root")
                       (make-random-movement-target ())
                       (calculate-path ())
                       (repeat-until-fail
-                       ()
+                       (:name "follow-path-loop")
                        (sequence (:name "follow-sequence")
                                  (follow-path ())
                                  (move ())))
                       (idle (:time 5.0)))))
 
+(defconstant +tree+ 0)
+(defconstant +ore+ 1)
+
+(ecs:defcomponent resource
+  "Either wood or ore deposit."
+  (type -1 :type fixnum :index resource-of-type)
+  (free 1 :type bit))
+
+(define-behaviour-tree-node pick-tree () nil
+  (with-resource-of-type +tree+ resource
+    (when (plusp (resource-free resource))
+      (assign-target entity :entity resource)
+      (return-from ecs::current-entity (complete-node t))))
+  (complete-node nil))
+
+(defconstant +gather-distance+ 32.0)
+
+(define-behaviour-tree-node start-collecting ()
+    (:components-ro (position target))
+  (with-position (target-x target-y) target-entity
+    (with-resource () target-entity
+      (when (or (zerop free)
+                (< +gather-distance+
+                   (distance position-x position-y
+                             target-x target-y)))
+        (return-from ecs::current-entity (complete-node nil)))
+      (setf free 0)
+      (complete-node t))))
+
+(define-behaviour-tree-node finish-collecting ()
+    (:components-ro (target))
+  (with-resource () target-entity
+    (setf free 1)
+    (complete-node t)))
+
+(ecs:defcomponent storage
+  (storage 1 :type bit :index storage-entity :unique t))
+
+(define-behaviour-tree-node start-carrying () nil
+  (assign-target entity :entity (storage-entity 1))
+  (complete-node t))
+
+(define-behaviour-tree-node store-wood () nil
+  ;; TODO degrade efficiency related to the number of workshops?..
+  (format t "TODO adding tree resource~%")
+  (complete-node t))
+
+(define-behaviour-tree-node flip-coin
+    ((probability 0.5 :type single-float))
+    nil
+  (complete-node (> flip-coin-probability (random 1.0))))
+
+(define-behaviour-tree-node start-idling () nil
+  (delete-tree)
+  (make-idle-behaviour-tree entity))
+
+(define-behaviour-tree collect-wood
+    (sequence
+     (:name "root")
+     (repeat-until-fail
+      (:name "collecting-wood-loop")
+      (sequence (:name "collect-wood-sequence")
+                (pick-tree ())
+                (calculate-path (:name "calculate-path-to-tree"))
+                (repeat-until-fail
+                 (:name "following-tree-loop")
+                 (sequence (:name "follow-tree-sequence")
+                           (follow-path (:name "keep-following-tree"))
+                           (move (:name "follow-tree"))))
+                (start-collecting ())
+                (idle (:name "collect-wood" :time 2.0))
+                (finish-collecting ())
+                (start-carrying ())
+                (calculate-path (:name "calculate-path-to-storage"))
+                (repeat-until-fail
+                 (:name "carrying-loop")
+                 (sequence (:name "carry-sequence")
+                           (follow-path (:name "keep-carrying"))
+                           (move (:name "carry"))))
+                (idle (:name "unload" :time 1.0))
+                (store-wood ())
+                (flip-coin (:name "concentration" :probability 0.8))))
+     (start-idling ())))
+
+(define-behaviour-tree-node pick-ore () nil
+  (with-resource-of-type +ore+ resource
+    (when (plusp (resource-free resource))
+      (assign-target entity :entity resource)
+      (return-from ecs::current-entity (complete-node t))))
+  (complete-node nil))
+
+(define-behaviour-tree-node store-ore () nil
+  ;; TODO degrade efficiency related to the number of workshops?..
+  (format t "TODO adding ore resource~%")
+  (complete-node t))
+
+(define-behaviour-tree collect-ore
+    (sequence
+     (:name "root")
+     ;; TODO : check workshops are present
+     (repeat-until-fail
+      (:name "collecting-ore-loop")
+      (sequence (:name "collect-ore-sequence")
+                (pick-ore ())
+                (calculate-path (:name "calculate-path-to-ore"))
+                (repeat-until-fail
+                 (:name "following-ore-loop")
+                 (sequence (:name "follow-ore-sequence")
+                           (follow-path (:name "keep-following-ore"))
+                           (move (:name "follow-ore"))))
+                (start-collecting ())
+                (idle (:name "collect-ore" :time 2.0))
+                (finish-collecting ())
+                (start-carrying ())
+                (calculate-path (:name "calculate-path-to-storage"))
+                (repeat-until-fail
+                 (:name "carrying-loop")
+                 (sequence (:name "carry-sequence")
+                           (follow-path (:name "keep-carrying"))
+                           (move (:name "carry"))))
+                (idle (:name "unload" :time 1.0))
+                (store-ore ())
+                (flip-coin (:name "concentration" :probability 0.6))))
+     (start-idling ())))

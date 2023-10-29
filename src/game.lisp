@@ -7,6 +7,6 @@
     entity))
 
 (defun make-colonists ()
-  (make-idle-behaviour-tree
+  (make-collect-wood-behaviour-tree
    (make-colonist "ordinary human" :x 800 :y 448))
   )
