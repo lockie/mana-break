@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Mana Break
+Exec=mana-break
+Terminal=false
+Categories=Game;
+Icon=icon
