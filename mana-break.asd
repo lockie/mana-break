@@ -3,10 +3,9 @@
   :author "Andrew Kravchuk"
   :license "MIT"
   :depends-on (#:alexandria
-               
+               #:cl-fast-ecs
                #:cl-liballegro
                #:cl-liballegro-nuklear
-               
                #:livesupport)
   :serial t
   :components ((:module "src"

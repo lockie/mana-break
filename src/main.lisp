@@ -13,8 +13,7 @@
   :test #'string=)
 
 (defun init ()
-  ;; TODO : put your initialization logic here
-  )
+  (ecs:bind-storage))
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
@@ -22,9 +21,7 @@
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
-
-  ;; TODO : put your game logic here
-  )
+  (ecs:run-systems :dt (float dt 0.0)))
 
 (defvar *font*)
 
