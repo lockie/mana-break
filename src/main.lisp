@@ -15,7 +15,8 @@
 (defun init ()
   (ecs:bind-storage)
   (load-atlas "dawnlike.atlas")
-  (load-map "map.tmx"))
+  (load-map "map.tmx")
+  (make-colonists))
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
