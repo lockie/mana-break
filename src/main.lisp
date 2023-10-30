@@ -63,10 +63,10 @@
                             (nk:flags nk:text-alignment :+text-right+)
                             ore))))))
 
-  (defun render ()
-    (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
-                  (format nil "~d FPS" *fps*))
-    (nk:allegro-render))
+(defun render ()
+  #+nil (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
+                      (format nil "~d FPS" *fps*))
+  (nk:allegro-render))
 
 (cffi:defcallback %main :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))

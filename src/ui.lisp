@@ -36,13 +36,11 @@
          (stop-activity entity)
          (,(symbolicate :make- behaviour-tree :-behaviour-tree) entity)))))
 
-(define-constant +selection-color+ (al:map-rgb 0 255 0) :test #'equalp)
-
 (ecs:defsystem draw-selection-frame
   (:components-ro (position character selected))
   (al:draw-rectangle position-x position-y
                      (+ position-x +tile-size+) (+ position-y +tile-size+)
-                     +selection-color+ 1)
+                     (al:map-rgb 0 255 0) 1)
   (nk:with-rects ((window-rect (:x 1216 :y 230 :w 384 :h 440)))
     (nk:with-colors ((background (:r 0 :g 0 :b 0 :a 190))
                      (button-background (:r 65 :g 105 :b 225 :a 140))

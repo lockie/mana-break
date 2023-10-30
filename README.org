@@ -7,7 +7,7 @@
 ** System requirements
 
 + Windows 7 SP1 or Ubuntu 16.04
-+ 2 GB of RAM
++ 4 GB of RAM
 + 40 Mb of free disk space
 
 ** Author
