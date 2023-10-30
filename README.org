@@ -18,6 +18,7 @@
 
 + [[https://fonts.google.com/specimen/Inconsolata/about][Inconsolata font]]
 + [[http://tango.freedesktop.org][Tango icons]]
++ [[https://github.com/tommyettinger/DawnLikeAtlas][DawnLike atlas]]
 
 ** Copyright
 
