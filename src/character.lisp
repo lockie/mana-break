@@ -267,9 +267,9 @@
 
 (define-behaviour-tree-node make-random-movement-target () nil
   (loop :for x :of-type single-float :=
-           (random (* +tile-size+ *world-width*))
+           (random (* +tile-size+ (- *world-width* 7)))
         :for y :of-type single-float :=
-           (random (* +tile-size+ (1- *world-height*)))
+           (random (* +tile-size+ (- *world-height* 1)))
         :while (obstaclep x y)
         :finally (with-tiles (tile-hash x y) tile
                    (when (has-map-tile-p tile)
@@ -297,11 +297,8 @@
   (free 1 :type bit))
 
 (define-behaviour-tree-node pick-tree () nil
-  (with-resource-of-type +tree+ resource
-    (when (plusp (resource-free resource))
-      (assign-target entity :entity resource)
-      (return-from ecs::current-entity (complete-node t))))
-  (complete-node nil))
+  (assign-target entity :entity (random-elt (resource-of-type +tree+)))
+  (complete-node t))
 
 (defconstant +gather-distance+ 32.0)
 
@@ -332,7 +329,7 @@
 
 (define-behaviour-tree-node store-wood () nil
   ;; TODO degrade efficiency related to the number of workshops?..
-  (incf *wood* 5.0)
+  (incf *wood* 10.0)
   (complete-node t))
 
 (define-behaviour-tree-node flip-coin
@@ -358,7 +355,7 @@
                            (follow-path (:name "keep-following-tree"))
                            (move (:name "follow-tree"))))
                 (start-collecting ())
-                (idle (:name "collect-wood" :time 2.0))
+                (idle (:name "collect-wood" :time 4.0))
                 (finish-collecting ())
                 (start-carrying ())
                 (calculate-path (:name "calculate-path-to-storage"))
@@ -377,7 +374,8 @@
 
 (ecs:defcomponent building
   (assigned 0 :type bit :index assigned-buildings)
-  (type -1 :type fixnum :index buildings-of-type))
+  (type -1 :type fixnum :index buildings-of-type)
+  (free 1 :type bit))
 
 (define-behaviour-tree-node check-workshop-present () nil
   (with-buildings-of-type +workshop+ _
@@ -385,15 +383,12 @@
   (complete-node nil))
 
 (define-behaviour-tree-node pick-ore () nil
-  (with-resource-of-type +ore+ resource
-    (when (plusp (resource-free resource))
-      (assign-target entity :entity resource)
-      (return-from ecs::current-entity (complete-node t))))
-  (complete-node nil))
+  (assign-target entity :entity (random-elt (resource-of-type +ore+)))
+  (complete-node t))
 
 (define-behaviour-tree-node store-ore () nil
   ;; TODO degrade efficiency related to the number of workshops?..
-  (incf *ore* 5.0)
+  (incf *ore* 10.0)
   (complete-node t))
 
 (define-behaviour-tree collect-ore
@@ -411,7 +406,7 @@
                            (follow-path (:name "keep-following-ore"))
                            (move (:name "follow-ore"))))
                 (start-collecting ())
-                (idle (:name "collect-ore" :time 2.0))
+                (idle (:name "collect-ore" :time 6.0))
                 (finish-collecting ())
                 (start-carrying ())
                 (calculate-path (:name "calculate-path-to-storage"))
@@ -434,10 +429,11 @@
         (>= *ore* check-resources-ore))))
 
 (define-behaviour-tree-node pick-building () nil
-  (with-assigned-buildings 0 building
-    (assign-target entity :entity building)
-    (return-from ecs::current-entity (complete-node t)))
-  (complete-node nil))
+  (if-let (buildings (assigned-buildings 0))
+    (progn
+      (assign-target entity :entity (random-elt buildings))
+      (complete-node t))
+    (complete-node nil)))
 
 (defconstant +build-distance+ 32.0)
 
@@ -510,7 +506,7 @@
       ()
       (sequence
        (:name "build-temple-sequence")
-       (check-resources (:wood 100.0 :ore 100.0))
+       (check-resources (:wood 50.0 :ore 50.0))
        (pick-building ())
        (calculate-path (:name "calculate-path-to-building"))
        (repeat-until-fail
@@ -519,21 +515,36 @@
                   (follow-path (:name "keep-following-building"))
                   (move ())))
        (flip-coin (:name "concentration" :probability 0.9))
-       (spend-resources (:wood 100.0 :ore 100.0))
+       (spend-resources (:wood 50.0 :ore 50.0))
        (start-building ())
-       (idle (:name "build" :time 10.0))
+       (idle (:name "build" :time 15.0))
        (finish-building-temple ())
        (dummy-false ())))
      (start-idling ())))
 
 (define-behaviour-tree-node pick-temple () nil
-  (with-buildings-of-type +temple+ building
-    (assign-target entity :entity building)
-    (return-from ecs::current-entity (complete-node t)))
-  (complete-node nil))
+  (if-let (temples (buildings-of-type +temple+))
+    (progn
+      (assign-target entity :entity (random-elt temples))
+      (complete-node t))
+    (complete-node nil)))
+
+(define-behaviour-tree-node start-praying ()
+    (:components-ro (target))
+  (with-building () target-entity
+    (when (zerop free)
+      (return-from ecs::current-entity (complete-node nil)))
+    (setf free 0)
+    (complete-node t)))
+
+(define-behaviour-tree-node stop-praying ()
+    (:components-ro (target))
+  (with-building () target-entity
+    (setf free 1))
+  (complete-node t))
 
 (define-behaviour-tree-node generate-mana
-    ((amount 2.0 :type single-float))
+    ((amount 10.0 :type single-float))
     nil
   (incf *mana* generate-mana-amount)
   (complete-node t))
@@ -553,7 +564,9 @@
                   (follow-path (:name "keep-following-temple"))
                   (move ())))
        (flip-coin (:name "concentration" :probability 0.9))
+       (start-praying ())
        (idle (:name "pray" :time 10.0))
+       (stop-praying ())
        (generate-mana ())
        (dummy-false ())))
      (start-idling ())))

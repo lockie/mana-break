@@ -10,16 +10,18 @@
            (y (getf mouse-state 'al:y))
            (buttons (getf mouse-state 'al:buttons)))
       (declare (type fixnum x y buttons))
-      (when (and (= buttons 1)
-                 (not ;; HACK: dont react to presses within status window
-                  (and (> x 1216) (< x 1600)
-                       (> y 230) (< y 670))))
-        (when-let (selected (first (selected-character 1 :count 1)))
-          (delete-selected selected))
-        (with-tiles (tile-hash (float x) (float y)) entity
-          (when (has-character-p entity)
-            (make-selected entity)
-            (return-from update-selection)))))))
+      (let ((selected (first (selected-character 1 :count 1))))
+        (when (and (= buttons 1)
+                   ;; HACK: dont react to presses within status window
+                   (not (and selected
+                             (and (> x 1216) (< x 1600)
+                                  (> y 230) (< y 670)))))
+          (when selected
+            (delete-selected selected))
+          (with-tiles (tile-hash (float x) (float y)) entity
+            (when (has-character-p entity)
+              (make-selected entity)
+              (return-from update-selection))))))))
 
 (defmacro defspell (caption requirements price behaviour-tree)
   `(progn
@@ -89,9 +91,9 @@
             1.0 collect-wood)
           (defspell "collect ore" "2 mana, needs workshop"
             2.0 collect-ore)
-          (defspell "build workshop" "10 mana, needs 100 wood"
-            10.0 build-workshop)
-          (defspell "build temple" "20 mana, needs 100 wood & ore"
-            20.0 build-temple)
+          (defspell "build workshop" "4 mana, needs 100 wood"
+            4.0 build-workshop)
+          (defspell "build temple" "5 mana, needs 50 wood & ore"
+            5.0 build-temple)
           (defspell "pray" "3 mana, needs temple"
             3.0 pray))))))

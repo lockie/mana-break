@@ -25,10 +25,18 @@
 (defvar *font*)
 (defvar *ui-font*)
 (defvar *ui-context*)
+(defvar *win* nil)
 
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
+  (regenerate-mana (float dt 0.0))
+  (when (and (not *win*) (>= *mana* 100.0))
+    (setf *win* t)
+    (al:show-native-message-box
+     (cffi:null-pointer) "You win!" ""
+     "You've beat the game by collecting a 100 points of mana required to escape your durance!"
+     (cffi:null-pointer) 0))
   (update-selection)
   (ecs:run-systems :dt (float dt 0.0))
   (nk:with-rects ((window-rect (:x 600 :y 0 :w 400 :h 30)))
