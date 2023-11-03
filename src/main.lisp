@@ -31,12 +31,6 @@
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
   (regenerate-mana (float dt 0.0))
-  (when (and (not *win*) (>= *mana* 100.0))
-    (setf *win* t)
-    (al:show-native-message-box
-     (cffi:null-pointer) "You win!" ""
-     "You've beat the game by collecting a 100 points of mana required to escape your durance!"
-     (cffi:null-pointer) 0))
   (update-selection)
   (ecs:run-systems :dt (float dt 0.0))
   (nk:with-rects ((window-rect (:x 600 :y 0 :w 400 :h 30)))
@@ -63,7 +57,13 @@
                             (nk:flags nk:text-alignment :+text-right+)
                             ore))))))
 
-(defun render ()
+(defun render (display)
+  (when (and (not *win*) (>= *mana* 100.0))
+    (setf *win* t)
+    (al:show-native-message-box
+     display "You win!" ""
+     "You've beat the game by collecting a 100 points of mana required to escape your durance!"
+     (cffi:null-pointer) 0))
   #+nil (al:draw-text *font* (al:map-rgba 255 255 255 0) 0 0 0
                       (format nil "~d FPS" *fps*))
   (nk:allegro-render))
@@ -149,7 +149,7 @@
                    (al:clear-to-color (al:map-rgb 0 0 0))
                    (livesupport:continuable
                      (update dt)
-                     (render))
+                     (render display))
                    (al:flip-display)
                :finally
                   (nk:allegro-shutdown)
