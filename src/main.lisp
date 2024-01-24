@@ -79,11 +79,11 @@
                             (uiop:print-condition-backtrace e :stream s))
                           (cffi:null-pointer) :error)))))
     (al:set-app-name "mana-break")
+    (unless (al:init)
+      (error "Initializing liballegro failed"))
     (let ((config (al:load-config-file +config-path+)))
       (unless (cffi:null-pointer-p config)
         (al:merge-config-into (al:get-system-config) config)))
-    (unless (al:init)
-      (error "Initializing liballegro failed"))
     (unless (al:init-primitives-addon)
       (error "Initializing primitives addon failed"))
     (unless (al:init-image-addon)
@@ -167,7 +167,8 @@
   0)
 
 (defun main ()
-  (float-features:with-float-traps-masked
-      (:divide-by-zero :invalid :inexact :overflow :underflow)
-    (al:run-main 0 (cffi:null-pointer) (cffi:callback %main))))
+  (trivial-main-thread:with-body-in-main-thread ()
+    (float-features:with-float-traps-masked
+        (:divide-by-zero :invalid :inexact :overflow :underflow)
+      (al:run-main 0 (cffi:null-pointer) (cffi:callback %main)))))
 
