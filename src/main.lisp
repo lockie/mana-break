@@ -115,7 +115,8 @@
       (unwind-protect
            (cffi:with-foreign-object (event '(:union al:event))
              (init)
-             (livesupport:setup-lisp-repl)
+             (trivial-main-thread:call-in-main-thread
+              #'livesupport:setup-lisp-repl)
              (loop
                :named main-game-loop
                :with *font* := (al:ensure-loaded #'al:load-ttf-font
