@@ -33,7 +33,7 @@ jobs:
          sudo installer -pkg /tmp/MacPorts-2.9.1-12-Monterey.pkg -target /
          echo "/opt/local/bin" >> $GITHUB_PATH
       - name: Install prerequisites
-        run: sudo /opt/local/bin/port -N install sbcl pkgconfig allegro5 dylibbundler
+        run: sudo /opt/local/bin/port -N install sbcl pkgconfig libffi allegro5 dylibbundler
       - name: Install Quicklisp
         run: |
           wget -q https://beta.quicklisp.org/quicklisp.lisp -P /tmp
