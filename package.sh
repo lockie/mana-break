@@ -46,9 +46,10 @@ case $1 in
         do_build
         bundle="Mana Break.app"
         contents=$bundle/Contents
-        mkdir -p "$contents"/MacOS
-        cp package/Info.plist "$contents"
+        mkdir -p "$contents/MacOS"
         cp -r Resources "$contents"
+        cp package/Info.plist "$contents"
+        cp package/icon.png "$contents/Resources"
         for library in bin/*.dylib; do
             dylibbundler -of -cd -b -p '@loader_path' -x "$library" -d "$contents/MacOS"
             cp "$library" "$contents/MacOS"
