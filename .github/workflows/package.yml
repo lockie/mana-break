@@ -34,6 +34,10 @@ jobs:
          echo "/opt/local/bin" >> $GITHUB_PATH
       - name: Install prerequisites
         run: sudo /opt/local/bin/port -N install sbcl pkgconfig allegro5 dylibbundler
+      - name: Install Quicklisp
+        run: |
+          wget -q https://beta.quicklisp.org/quicklisp.lisp -P /tmp
+          sbcl --non-interactive --load /tmp/quicklisp.lisp --eval '(quicklisp-quickstart:install :dist-version nil :client-version nil)' --eval '(ql-util:without-prompting (ql:add-to-init-file))'  --eval '(ql-dist:install-dist "http://dist.ultralisp.org/" :prompt nil)' --eval '(setf (ql-dist:preference (ql-dist:find-dist "ultralisp")) 0)' --eval '(ql-dist:install-dist "http://dist.luckylambda.technology/releases/lucky-lambda.txt" :prompt nil)'
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Build package
