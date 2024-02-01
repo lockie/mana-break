@@ -24,6 +24,26 @@ jobs:
           name: linux
           path: '*.AppImage'
           if-no-files-found: error
+  build-macos:
+    runs-on: macos-12
+    steps:
+      - name: Install macports
+        run: |
+         wget -q https://github.com/macports/macports-base/releases/download/v2.9.1/MacPorts-2.9.1-12-Monterey.pkg -P /tmp
+         sudo installer -pkg /tmp/MacPorts-2.9.1-12-Monterey.pkg -target /
+         echo "/opt/local/bin" >> $GITHUB_PATH
+      - name: Install prerequisites
+        run: sudo /opt/local/bin/port -N install sbcl pkgconfig allegro5 dylibbundler
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build package
+        run: DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib PKG_CONFIG_PATH=/opt/local/lib/pkgconfig ./package.sh macos
+      - name: Archive package
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos
+          path: '*.dmg'
+          if-no-files-found: error
   build-windows:
     runs-on: ubuntu-latest
     container:
@@ -52,7 +72,7 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "linux/*.AppImage,windows/*.exe"
+          artifacts: "linux/*.AppImage,macos/*.dmg,windows/*.exe"
           omitBody: true
           allowUpdates: true
           artifactErrorsFailBuild: true

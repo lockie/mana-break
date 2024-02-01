@@ -42,6 +42,30 @@ case $1 in
         makensis package/installer.nsi
         ;;
 
+    macos)
+        do_build
+        bundle="Mana Break.app"
+        contents=$bundle/Contents
+        mkdir -p "$contents"/MacOS
+        cp package/Info.plist "$contents"
+        cp -r Resources "$contents"
+        for library in bin/*.dylib; do
+            dylibbundler -of -cd -b -p '@loader_path' -x "$library" -d "$contents/MacOS"
+            cp "$library" "$contents/MacOS"
+        done
+
+        # https://bugs.launchpad.net/sbcl/+bug/1869401
+        replace_fr=$(echo -n  "/opt/local/lib/libzstd.1.dylib" | xxd -ps -c1 | tr -d '\n')
+        replace_to=$(echo -en "@loader_path/libzstd.1.dylib\x00\x00" | xxd -ps -c1 | tr -d '\n')
+        xxd -ps -c1 bin/mana-break | tr -d '\n' | sed "s/$replace_fr/$replace_to/" | fold -w 2 | xxd -r -p > "$contents/MacOS/mana-break"
+        chmod +x "$contents/MacOS/mana-break"
+
+        hdiutil create -quiet -srcfolder "$bundle" out.dmg
+        # NOTE: ULMO = lzma compression = Catalina+ only
+        hdiutil convert -quiet out.dmg -format ULMO -o "mana-break-${VERSION}.dmg"
+        rm out.dmg
+        ;;
+
     *)
         echo "Uknown package flavor: $1"
         exit 1
