@@ -73,11 +73,12 @@
           (make-array 512 :element-type 'single-float))
          ((&stack frontier) (make-queue frontier-items frontier-priorities)))
     (when (< (length *cost-so-far*) world-size)
-      (setf *cost-so-far* (ecs::adjust-array* *cost-so-far* world-size
-                                              :element-type 'single-float)))
+      (setf *cost-so-far*
+            (trivial-adjust-simple-array:adjust-simple-array
+             *cost-so-far* world-size :element-type 'single-float)))
     (when (< (length *came-from*) world-size)
-      (setf *came-from* (ecs::adjust-array* *came-from* world-size
-                                            :element-type 'fixnum)))
+      (setf *came-from* (trivial-adjust-simple-array:adjust-simple-array
+                         *came-from* world-size :element-type 'fixnum)))
     (fill *cost-so-far* float-features:single-float-nan)
     (fill *came-from* -1)
     (queue-insert frontier (tile-hash start-x* start-y*) 0.0)
